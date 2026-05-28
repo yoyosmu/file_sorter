@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "file_sorter"
+name = "file_sorter-cli"
 version = "0.1.0"
 dependencies = [
  "dirs",
