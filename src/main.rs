@@ -1,19 +1,25 @@
 use std::fs;
+use std::env;
 
 fn main() -> std::io::Result<()> {
 
     let downloads = dirs::download_dir().unwrap();
-    let paths = fs::read_dir(&downloads).unwrap();
 
-    let pdf_dir = downloads.join("PDFs");
-    let img_dir = downloads.join("IMGs");
-    let audio_dir = downloads.join("AUDIOs");
-    let archive_dir = downloads.join("ARCHIVEs");
+    let folder = env::args().nth(1).map(std::path::PathBuf::from).unwrap_or(downloads);
+
+    let paths = fs::read_dir(&folder)?;
+
+    let pdf_dir = folder.join("PDFs");
+    let img_dir = folder.join("IMGs");
+    let audio_dir = folder.join("AUDIOs");
+    let archive_dir = folder.join("ARCHIVEs");
     
     fs::create_dir_all(&pdf_dir)?;
     fs::create_dir_all(&img_dir)?;
     fs::create_dir_all(&audio_dir)?;
     fs::create_dir_all(&archive_dir)?;
+
+    println!("{:?}", folder);
     
     for entry in paths {
         let path = entry.unwrap().path();
