@@ -1,5 +1,5 @@
 [package]
-name = "file_sorter"
+name = "file_sorter-cli"
 version = "0.1.0"
 edition = "2024"
 description = "Simple Rust CLI tool to organize downloads by file type"
