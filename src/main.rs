@@ -18,8 +18,6 @@ fn main() -> std::io::Result<()> {
     fs::create_dir_all(&img_dir)?;
     fs::create_dir_all(&audio_dir)?;
     fs::create_dir_all(&archive_dir)?;
-
-    println!("{:?}", folder);
     
     for entry in paths {
         let path = entry.unwrap().path();
