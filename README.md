@@ -1,6 +1,6 @@
 # File Sorter
 
-A simple Rust program that automatically organizes files in the Downloads folder.
+A simple Rust program that automatically organizes files in a folder.
 
 ## Features
 
@@ -8,6 +8,12 @@ A simple Rust program that automatically organizes files in the Downloads folder
 * Sorts documents
 * Sorts audio files
 * Sorts archives
+
+## ARGUMENTS
+
+```bash
+file_sorter ~/Documents
+```
 
 ## Usage
 
