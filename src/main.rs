@@ -1,52 +1,102 @@
+use clap::Parser;
 use std::fs;
-use std::env;
+use std::thread;
+use std::time::Duration;
+
+#[derive(Parser, Debug)]
+#[command(
+    version,
+    about = "Simple folder sorter",
+    long_about = "A simple CLI tool that sorts files in a folder by type"
+)]
+struct Args {
+    folder: Option<String>,
+
+    #[arg(long)]
+    watch: bool,
+
+    #[arg(long)]
+    dry_run: bool,
+}
 
 fn main() -> std::io::Result<()> {
+    let args = Args::parse();
+
+    if args.watch {
+        loop {
+            run_once(&args)?;
+            thread::sleep(Duration::from_secs(100));
+        }
+    } else {
+        run_once(&args)?;
+    }
+
+    Ok(())
+}
+
+fn run_once(args: &Args) -> std::io::Result<()> {
 
     let downloads = dirs::download_dir().unwrap();
-
-    let folder = env::args().nth(1).map(std::path::PathBuf::from).unwrap_or(downloads);
+    let folder = args.folder.clone().map(std::path::PathBuf::from).unwrap_or(downloads);
 
     let paths = fs::read_dir(&folder)?;
 
     let pdf_dir = folder.join("PDFs");
     let img_dir = folder.join("IMGs");
     let audio_dir = folder.join("AUDIOs");
+    let video_dir = folder.join("VIDs");
     let archive_dir = folder.join("ARCHIVEs");
-    
+
     fs::create_dir_all(&pdf_dir)?;
     fs::create_dir_all(&img_dir)?;
     fs::create_dir_all(&audio_dir)?;
+    fs::create_dir_all(&video_dir)?;
     fs::create_dir_all(&archive_dir)?;
-    
-    for entry in paths {
-        let path = entry.unwrap().path();
-        let file_name = path.file_name().unwrap().to_string_lossy();
-        let images = ["jpg", "png", "webp", "gif", "avif", "tiff", "bmp", "raw", "heif", "heic"];
-        let docs = ["docx", "pdf", "doc", "odt", "txt", "rtf", "xps", "xlsx", "csv", "ods"];
-        let audio = ["mp3", "mp4", "mp5", "wav", "aac", "flac", "ogg", "wma", "aiff", "m4a", "dts", "opus"];
-        let archive = ["zip", "tar", "gz", "bz2", "7z", "rar", "xz", "lzh", "lha", "taz", "pkg", "deb", "tgz", "lzip"];
 
-        if let Some(ext) = path.extension() {
-            let ext = ext.to_string_lossy().to_lowercase();
-            
-            if docs.contains(&ext.as_str()) {
-                    let dest = pdf_dir.join(file_name.as_ref());
-                    fs::rename(&path, &dest)?;
+    let images = ["jpg", "png", "webp", "jpeg", "gif", "avif", "tiff", "bmp", "raw", "heif", "heic"];
+    let docs = ["docx", "pdf", "doc", "odt", "txt", "rtf", "xps", "xlsx", "csv", "ods"];
+    let audio = ["mp3", "wav", "aac", "flac", "ogg", "wma", "aiff", "m4a", "dts", "opus"];
+    let video = ["mp4", "avi", "mov", "webm", "flv", "wmv", "mpg", "mpeg", "3gp", "3g2", "m4v", "mkv"];
+    let archive = ["zip", "tar", "gz", "bz2", "7z", "rar", "xz", "lzh", "lha", "taz", "pkg", "deb", "tgz", "lzip"];
+
+    for entry in paths {
+        if let Ok(entry) = entry {
+            let path = entry.path();
+
+            if path.is_dir() {
+                continue;
+            }
+
+            let file_name = match path.file_name() {
+                Some(name) => name,
+                None => continue,
+            };
+
+            if let Some(ext) = path.extension() {
+                let ext = ext.to_string_lossy().to_lowercase();
+
+                let dest = if docs.contains(&ext.as_str()) {
+                    pdf_dir.join(file_name)
+                } else if images.contains(&ext.as_str()) {
+                    img_dir.join(file_name)
+                } else if audio.contains(&ext.as_str()) {
+                    audio_dir.join(file_name)
+                } else if video.contains(&ext.as_str()) {
+                    video_dir.join(file_name)
+                } else if archive.contains(&ext.as_str()) {
+                    archive_dir.join(file_name)
+                } else {
+                    continue;
+                };
+
+                if args.dry_run {
+                    println!("[DRY RUN] {:?} -> {:?}", path.file_name().unwrap(),dest.file_name().unwrap());
+                } else {
+                    fs::rename(&path, &dest)?;                   
                 }
-            else if images.contains(&ext.as_str()) {
-                    let dest = img_dir.join(file_name.as_ref());            
-                    fs::rename(&path, &dest)?;
-                }     
-            else if audio.contains(&ext.as_str()) {
-                    let dest = audio_dir.join(file_name.as_ref());                 
-                    fs::rename(&path, &dest)?;
-                }
-            else if archive.contains(&ext.as_str()) {
-                    let dest = archive_dir.join(file_name.as_ref());                 
-                    fs::rename(&path, &dest)?;
-                }    
+            }
         }
     }
+
     Ok(())
 }
